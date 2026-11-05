@@ -8,6 +8,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#ifndef _WIN32
+#include <sys/utsname.h>
+#endif
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -49,6 +52,25 @@ enum {
  */
 #define FIREHOSE_UFS_TAG_TIMEOUT_MS	5000
 #define FIREHOSE_UFS_COMMIT_TIMEOUT_MS	120000
+
+static bool host_is_wsl(void)
+{
+#ifndef _WIN32
+	struct utsname u;
+
+	if (uname(&u) < 0)
+		return false;
+
+	return strstr(u.release, "microsoft") ||
+	       strstr(u.release, "Microsoft") ||
+	       strstr(u.release, "WSL") ||
+	       strstr(u.version, "microsoft") ||
+	       strstr(u.version, "Microsoft") ||
+	       strstr(u.version, "WSL");
+#else
+	return false;
+#endif
+}
 
 /*
  * Substring emitted by the Firehose programmer's startup logs when VIP is
@@ -554,7 +576,8 @@ static int firehose_send_configure(struct qdl_device *qdl, size_t payload_size,
 	xml_setpropf(node, "MemoryName", memory_name);
 	xml_setpropf(node, "MaxPayloadSizeToTargetInBytes", "%lu", payload_size);
 	xml_setpropf(node, "Verbose", "%d", 0);
-	xml_setpropf(node, "ZlpAwareHost", "%d", 1);
+	qdl->zlp_aware_host = !host_is_wsl();
+	xml_setpropf(node, "ZlpAwareHost", "%d", qdl->zlp_aware_host);
 	xml_setpropf(node, "SkipStorageInit", "%d", skip_storage_init);
 
 	firehose_write(qdl, doc);

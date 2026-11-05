@@ -13,6 +13,8 @@
 #include <cmocka.h>
 #include <libusb.h>
 
+#include "../src/ux.h"
+
 struct mock_transfer {
 	int ret;
 	int actual;
@@ -79,6 +81,12 @@ void ux_warnx(const char *fmt, ...)
 }
 
 #include "usb.c"
+
+void ux_debug_tag(enum ux_tag tag, const char *fmt, ...)
+{
+	(void)tag;
+	(void)fmt;
+}
 
 static void set_strings(const struct mock_string *values, size_t count)
 {

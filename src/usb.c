@@ -583,7 +583,6 @@ static int usb_read(struct qdl_device *qdl, void *buf, size_t len, unsigned int 
 
 	qdl_usb->expect_zlp = actual > 0 && len == (size_t)actual &&
 			      !(actual % qdl_usb->in_maxpktsize);
-
 	return actual;
 }
 
@@ -614,7 +613,7 @@ static int usb_write(struct qdl_device *qdl, const void *buf, size_t len, unsign
 		data += actual;
 	}
 
-	if (len_orig % qdl_usb->out_maxpktsize == 0) {
+	if (qdl->zlp_aware_host && len_orig % qdl_usb->out_maxpktsize == 0) {
 		ret = libusb_bulk_transfer(qdl_usb->usb_handle, qdl_usb->out_ep, NULL,
 					   0, &actual, timeout);
 		if (ret < 0)
